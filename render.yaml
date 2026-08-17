@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: hangar-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+
+  - type: web
+    name: hangar-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      # Set to hangar-backend's public URL (e.g. https://hangar-backend.onrender.com)
+      # after the backend service is up - filled in manually post-deploy rather than
+      # via fromService, since HttpClient needs a full https:// URL, not Render's
+      # internal hostport value.
+      - key: HangarBackend__BaseUrl
+        sync: false
