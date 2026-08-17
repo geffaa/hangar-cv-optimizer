@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using HangarDashboard.Models
 @using HangarDashboard.Services
+@using static HangarDashboard.Services.InvariantFormat
 @inject HangarApiClient Api
 
 <PageTitle>Hangar Layout Planner</PageTitle>
@@ -81,8 +82,8 @@
             }
 
             <div class="border" style="width: 100%; max-width: 700px;">
-                <svg viewBox="0 0 @hangarWidth @hangarHeight" style="width: 100%; background: #f5f5f5;">
-                    <rect x="0" y="0" width="@hangarWidth" height="@hangarHeight" fill="none" stroke="black" stroke-width="0.3" />
+                <svg viewBox="@($"0 0 {hangarWidth.Inv()} {hangarHeight.Inv()}")" style="width: 100%; background: #f5f5f5;">
+                    <rect x="0" y="0" width="@hangarWidth.Inv()" height="@hangarHeight.Inv()" fill="none" stroke="black" stroke-width="0.3" />
 
                     @foreach (var aircraft in result.Result.Placed)
                     {
@@ -90,11 +91,12 @@
                         var color = isInViolation ? "#e74c3c" : "#3498db";
                         var halfLength = aircraft.LengthM / 2;
                         var halfWingspan = aircraft.WingspanM / 2;
+                        var transform = $"translate({aircraft.Center.X.Inv()}, {aircraft.Center.Y.Inv()}) rotate({aircraft.RotationDeg.Inv()})";
 
-                        <g transform="translate(@aircraft.Center.X, @aircraft.Center.Y) rotate(@aircraft.RotationDeg)">
-                            <rect x="@((-halfLength).ToString(System.Globalization.CultureInfo.InvariantCulture))"
-                                  y="@((-halfWingspan).ToString(System.Globalization.CultureInfo.InvariantCulture))"
-                                  width="@aircraft.LengthM" height="@aircraft.WingspanM"
+                        <g transform="@transform">
+                            <rect x="@((-halfLength).Inv())"
+                                  y="@((-halfWingspan).Inv())"
+                                  width="@aircraft.LengthM.Inv()" height="@aircraft.WingspanM.Inv()"
                                   fill="@color" fill-opacity="0.7" stroke="black" stroke-width="0.15" />
                         </g>
                         @RenderAircraftLabel(aircraft)

@@ -3,6 +3,7 @@
 @using HangarDashboard.Models
 @using HangarDashboard.Services
 @inject HangarApiClient Api
+@using static HangarDashboard.Services.InvariantFormat
 
 <PageTitle>Aircraft Detection</PageTitle>
 
@@ -33,9 +34,9 @@
             <image href="@imageDataUrl" x="0" y="0" width="@detectionResult.ImageWidth" height="@detectionResult.ImageHeight" />
             @foreach (var det in detectionResult.Detections)
             {
-                <rect x="@det.XMin" y="@det.YMin"
-                      width="@(det.XMax - det.XMin)" height="@(det.YMax - det.YMin)"
-                      fill="none" stroke="#2ecc71" stroke-width="@(detectionResult.ImageWidth / 300.0)" />
+                <rect x="@det.XMin.Inv()" y="@det.YMin.Inv()"
+                      width="@((det.XMax - det.XMin).Inv())" height="@((det.YMax - det.YMin).Inv())"
+                      fill="none" stroke="#2ecc71" stroke-width="@((detectionResult.ImageWidth / 300.0).Inv())" />
             }
         </svg>
     </div>

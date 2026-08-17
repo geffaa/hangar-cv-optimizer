@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using HangarDashboard.Models;
 
@@ -34,7 +35,11 @@ public class HangarApiClient(HttpClient httpClient)
         imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
         content.Add(imageContent, "file", fileName);
 
-        var response = await httpClient.PostAsync($"/detect?confidence_threshold={confidenceThreshold}", content, ct);
+        // Must use InvariantCulture: the server's locale (e.g. id-ID) formats
+        // doubles with a comma decimal separator ("0,25"), which FastAPI's
+        // float query-param parser rejects with a 422.
+        var thresholdParam = confidenceThreshold.ToString(CultureInfo.InvariantCulture);
+        var response = await httpClient.PostAsync($"/detect?confidence_threshold={thresholdParam}", content, ct);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<DetectionResult>(cancellationToken: ct))!;
     }
