@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 from hangar_cv_optimizer.collision.checker import DEFAULT_CLEARANCE_M, CollisionReport, check_collisions
 from hangar_cv_optimizer.geometry.models import AircraftFootprint, HangarBoundary
+from hangar_cv_optimizer.optimization.models import PlaceableAircraft, PlacementResult
+from hangar_cv_optimizer.optimization.service import optimize_layout
 
 app = FastAPI(
     title="Hangar CV Optimizer",
@@ -19,6 +21,23 @@ class CollisionCheckRequest(BaseModel):
     clearance_m: float = DEFAULT_CLEARANCE_M
 
 
+class OptimizeLayoutRequest(BaseModel):
+    hangar: HangarBoundary
+    aircraft: list[PlaceableAircraft]
+    clearance_m: float = DEFAULT_CLEARANCE_M
+    grid_step_m: float = 2.0
+    iterations: int = 150
+    seed: int | None = None
+
+
+class OptimizeLayoutResponse(BaseModel):
+    result: PlacementResult
+    collision_report: CollisionReport
+    """Post-hoc validation of the solver's own output. Should always be
+    clear by construction (the greedy placer enforces clearance), but is
+    run and returned so a client never has to trust the solver blindly."""
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -27,3 +46,17 @@ def health() -> dict[str, str]:
 @app.post("/check-collision", response_model=CollisionReport)
 def check_collision_endpoint(request: CollisionCheckRequest) -> CollisionReport:
     return check_collisions(request.aircraft, request.hangar, clearance_m=request.clearance_m)
+
+
+@app.post("/optimize-layout", response_model=OptimizeLayoutResponse)
+def optimize_layout_endpoint(request: OptimizeLayoutRequest) -> OptimizeLayoutResponse:
+    result = optimize_layout(
+        request.aircraft,
+        request.hangar,
+        clearance_m=request.clearance_m,
+        grid_step_m=request.grid_step_m,
+        iterations=request.iterations,
+        seed=request.seed,
+    )
+    collision_report = check_collisions(result.placed, request.hangar, clearance_m=request.clearance_m)
+    return OptimizeLayoutResponse(result=result, collision_report=collision_report)
