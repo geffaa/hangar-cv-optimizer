@@ -15,6 +15,10 @@ runs/
 *.pt
 *.onnx
 wandb/
+# Exception: models/ holds the specific deployed weights (small, deliberate),
+# decoupled from the full training-run bookkeeping under runs/.
+!models/
+!models/*.pt
 
 # .NET build artifacts
 frontend/bin/
