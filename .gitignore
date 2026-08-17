@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Datasets and training artifacts (large binaries, not versioned)
+data/
+runs/
+*.pt
+*.onnx
+wandb/

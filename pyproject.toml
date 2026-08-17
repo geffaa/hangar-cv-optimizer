@@ -9,8 +9,11 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.141.1",
     "ortools>=9.15.6755",
+    "pillow>=12.3.0",
     "pydantic>=2.13.4",
+    "scikit-learn>=1.9.0",
     "shapely>=2.1.2",
+    "ultralytics>=8.4.121",
     "uvicorn[standard]>=0.52.3",
 ]
 
