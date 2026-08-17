@@ -1,0 +1,76 @@
+@page "/detect"
+@rendermode InteractiveServer
+@using HangarDashboard.Models
+@using HangarDashboard.Services
+@inject HangarApiClient Api
+
+<PageTitle>Aircraft Detection</PageTitle>
+
+<h1>Aircraft Detection</h1>
+<p>Upload an image; the Python backend runs a YOLOv8 model and returns pixel bounding boxes.</p>
+
+<InputFile OnChange="OnFileSelected" accept=".jpg,.jpeg,.png" />
+
+@if (isLoading)
+{
+    <p class="mt-3">Running detection...</p>
+}
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
+
+@if (imageDataUrl is not null && detectionResult is not null)
+{
+    <p class="mt-3">
+        Image: @detectionResult.ImageWidth x @detectionResult.ImageHeight px
+        &nbsp;|&nbsp; Detections: <strong>@detectionResult.Detections.Count</strong>
+    </p>
+
+    <div style="max-width: 900px;">
+        <svg viewBox="0 0 @detectionResult.ImageWidth @detectionResult.ImageHeight" style="width: 100%;">
+            <image href="@imageDataUrl" x="0" y="0" width="@detectionResult.ImageWidth" height="@detectionResult.ImageHeight" />
+            @foreach (var det in detectionResult.Detections)
+            {
+                <rect x="@det.XMin" y="@det.YMin"
+                      width="@(det.XMax - det.XMin)" height="@(det.YMax - det.YMin)"
+                      fill="none" stroke="#2ecc71" stroke-width="@(detectionResult.ImageWidth / 300.0)" />
+            }
+        </svg>
+    </div>
+}
+
+@code {
+    private bool isLoading;
+    private string? errorMessage;
+    private string? imageDataUrl;
+    private DetectionResult? detectionResult;
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        errorMessage = null;
+        detectionResult = null;
+        isLoading = true;
+
+        try
+        {
+            var file = e.File;
+            using var stream = file.OpenReadStream(maxAllowedSize: 20 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var bytes = memoryStream.ToArray();
+
+            imageDataUrl = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+            detectionResult = await Api.DetectAsync(bytes, file.Name);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Detection failed: {ex.Message}. Is the FastAPI server running with trained weights available?";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

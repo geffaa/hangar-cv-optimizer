@@ -15,3 +15,7 @@ runs/
 *.pt
 *.onnx
 wandb/
+
+# .NET build artifacts
+frontend/bin/
+frontend/obj/
