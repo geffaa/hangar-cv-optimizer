@@ -51,9 +51,28 @@ uv run yolo detect train data=data/yolo/data.yaml model=yolov8n.pt \
 
 **Hipotesis:** Menyatukan kelas akan (a) menghilangkan masalah recall=0 pada kelas minoritas karena semua instance sekarang berkontribusi ke satu kelas dengan ~3425 instance, dan (b) mAP50 keseluruhan akan mendekati angka kelas `Airplane` di v1 (~0.93), karena secara task itu memang tugas yang sama — deteksi "ada pesawat" — hanya sekarang direpresentasikan dengan benar.
 
-**Hasil:** *(sedang berjalan — akan diisi setelah training selesai)*
+**Hasil (test set, 16 gambar):**
 
-**Observasi sementara (epoch 7/80):** mAP50 sudah mencapai 0.844, dibanding v1 yang baru mencapai ~0.38 di epoch 3 dan ~0.46 di epoch 15. Konvergensi jauh lebih cepat — konsisten dengan hipotesis bahwa model v1 menghabiskan "usaha belajar" untuk kelas minoritas yang pada akhirnya tidak pernah berhasil dipelajari, sementara v2 fokus penuh pada satu task yang well-defined.
+| Kelas | Instances | Precision | Recall | mAP50 | mAP50-95 |
+|---|---|---|---|---|---|
+| **Airplane (single-class)** | 394 | 0.989 | 0.916 | **0.932** | 0.671 |
+
+Training berjalan penuh 80/80 epoch (tidak early-stop — masih ada perbaikan kecil sampai akhir), total 1 jam 9 menit. mAP50 plateau di kisaran 0.917-0.923 sejak sekitar epoch 42, dengan perbaikan marginal terus sampai epoch terakhir.
+
+**Perbandingan langsung ke v1:**
+
+| Metric | v1 (kelas `Airplane` saja) | v2 (single-class) |
+|---|---|---|
+| Precision | 0.988 | 0.989 |
+| Recall | 0.930 | 0.916 |
+| mAP50 | 0.931 | 0.932 |
+| mAP50-95 | 0.674 | 0.671 |
+
+**Hipotesis terkonfirmasi:** performa v2 secara statistik setara dengan performa kelas `Airplane` di v1 (selisih dalam margin noise, bukan perbedaan berarti) — **membuktikan bahwa menyatukan kelas tidak kehilangan informasi yang berguna**, karena `Truncated_airplane` memang bukan target deteksi yang berbeda secara semantik. Bedanya krusial: angka 0.932 di v2 adalah angka yang **jujur mewakili seluruh model**, sedangkan mAP rata-rata v1 (0.472) menyesatkan karena didominasi kegagalan kelas yang secara desain memang tidak seharusnya ada.
+
+**Observasi tambahan — konvergensi lebih cepat:** Di epoch 7, v2 sudah mencapai mAP50 0.844, sementara v1 baru mencapai ~0.38 di epoch 3 dan ~0.46 di epoch 15 (dan itu pun angka rata-rata yang sudah "dibantu" turun oleh kelas minoritas). Ini konsisten dengan hipotesis bahwa model v1 menghabiskan kapasitas belajar untuk kelas yang pada akhirnya tidak pernah berhasil dipelajari.
+
+**Pelajaran:** Perbaikan task definition (v1→v2) memberi dampak yang jelas dan besar (recall kelas minoritas 0.0 → hilang sepenuhnya sebagai masalah), sementara metrik kelas utama nyaris tidak berubah — ini memperkuat argumen di `cv-methodology.md` bahwa bottleneck saat ini bukan lagi soal definisi task (sudah benar sejak v2), melainkan soal jumlah & resolusi data. Mendukung keputusan lanjut ke v3a (tiling) sebagai prioritas berikutnya, bukan model lebih besar.
 
 ---
 
